@@ -111,7 +111,19 @@ namespace CppSharp
         public static IEnumerable<Type> FindDerivedTypes(this Assembly assembly,
                                                          Type baseType)
         {
-            return assembly.GetTypes()
+            IEnumerable<Type> loadedTypes;
+            try
+            {
+                loadedTypes = assembly.GetTypes();
+            }
+            catch (System.Reflection.ReflectionTypeLoadException ex)
+            {
+                Diagnostics.Error("Error loading types from assembly '{0}': {1}",
+                    assembly.GetName().Name, ex.Message);
+                loadedTypes = ex.Types.Where(t => t != null);
+            }
+                
+            return loadedTypes
                 .Where(type => !type.FullName.Contains("CppSharp.MSVCToolchain"))
                 .Where(baseType.IsAssignableFrom);
         }
