@@ -19,16 +19,8 @@ namespace CppSharp.Types
             TypeMaps = new Dictionary<string, TypeMap>();
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                try
-                {
-                    var types = assembly.FindDerivedTypes(typeof(TypeMap));
-                    SetupTypeMaps(types, bindingContext);
-                }
-                catch (System.Reflection.ReflectionTypeLoadException ex)
-                {
-                    Diagnostics.Error("Error loading type maps from assembly '{0}': {1}",
-                        assembly.GetName().Name, ex.Message);
-                }
+                var types = assembly.FindDerivedTypes(typeof(TypeMap));
+                SetupTypeMaps(types, bindingContext);
             }
         }
 
@@ -43,7 +35,17 @@ namespace CppSharp.Types
                     if (attr.GeneratorKind == 0 ||
                         attr.GeneratorKind == bindingContext.Options.GeneratorKind)
                     {
-                        var typeMap = (TypeMap) Activator.CreateInstance(type);
+                        TypeMap typeMap;
+                        try
+                        {
+                            typeMap = (TypeMap) Activator.CreateInstance(type);
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostics.Error("Error instantiating type map {0} from assembly '{1}': {2}",
+                                type.Name, assembly.GetName().Name, ex.Message);
+                        }
+                        
                         typeMap.Context = bindingContext;
                         typeMap.TypeMapDatabase = this;
 
