@@ -40,7 +40,7 @@ namespace CppSharp
         /// <summary>
         /// Generate custom code here.
         /// </summary>
-        void GenerateCode(Driver driver, List<GeneratorOutput> outputs) { }
+        void GenerateCode(Driver driver, List<GeneratorOutput> outputs);// { }
     }
 
     public static class LibraryHelpers

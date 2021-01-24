@@ -36,7 +36,8 @@ CppSharp::Parser::CppParserOptions^ CppSharp::Parser::CppParserOptions::__Create
 
 CppSharp::Parser::CppParserOptions::~CppParserOptions()
 {
-    delete NativePtr;
+    if (__ownsNativeInstance)
+        delete NativePtr;
 }
 
 CppSharp::Parser::CppParserOptions::CppParserOptions()

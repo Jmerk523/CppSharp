@@ -146,6 +146,10 @@ namespace CppSharp
             }
         }
 
+        public void GenerateCode(Driver driver, List<GeneratorOutput> output)
+        {
+        }
+
         public void Postprocess(Driver driver, ASTContext ctx)
         {
         }

@@ -42,10 +42,11 @@ namespace CppSharp.Types
                         }
                         catch (Exception ex)
                         {
-                            Diagnostics.Error("Error instantiating type map {0} from assembly '{1}': {2}",
-                                type.Name, assembly.GetName().Name, ex.Message);
+                            Diagnostics.Error("Error instantiating type map {0}: {1}",
+                                type.Name, ex.Message);
+                            continue;
                         }
-                        
+
                         typeMap.Context = bindingContext;
                         typeMap.TypeMapDatabase = this;
 

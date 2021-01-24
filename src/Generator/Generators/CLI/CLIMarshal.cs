@@ -203,7 +203,7 @@ namespace CppSharp.Generators.CLI
                     return true;
             }
 
-            throw new NotSupportedException();
+            throw new NotSupportedException(primitive.ToString());
         }
 
         public override bool VisitTypedefType(TypedefType typedef, TypeQualifiers quals)
@@ -393,7 +393,7 @@ namespace CppSharp.Generators.CLI
         public readonly TextGenerator VarPrefix;
         public readonly TextGenerator ArgumentPrefix;
 
-        public CLIMarshalManagedToNativePrinter(MarshalContext ctx) 
+        public CLIMarshalManagedToNativePrinter(MarshalContext ctx)
             : base(ctx)
         {
             VarPrefix = new TextGenerator();
@@ -468,7 +468,7 @@ namespace CppSharp.Generators.CLI
                         isPointerToPrimitive || isPrimitive ? string.Empty : "*",
                         Context.Parameter.Name,
                         nativeVal);
-                    supportBefore.UnindentAndWriteCloseBrace();                       
+                    supportBefore.UnindentAndWriteCloseBrace();
                     break;
                 default:
                     Context.Return.Write("null");

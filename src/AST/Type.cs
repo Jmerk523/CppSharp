@@ -700,7 +700,7 @@ namespace CppSharp.AST
 
             var injectedSpecializationType = (TemplateSpecializationType)
                 injectedClassNameType.InjectedSpecializationType.Type;
-            return injectedSpecializationType.GetDeclaration();
+            return injectedSpecializationType?.GetDeclaration();
         }
 
         public override T Visit<T>(ITypeVisitor<T> visitor,
@@ -720,12 +720,12 @@ namespace CppSharp.AST
             if (type == null) return false;
 
             return Arguments.SequenceEqual(type.Arguments) &&
-                ((Template != null && Template.Name == type.Template.Name) ||
+                ((Template != null && Template.Name == type.Template?.Name) ||
                 (Desugared.Type != null && Desugared == type.Desugared));
         }
 
         public override int GetHashCode() =>
-            Arguments.Aggregate(Template.GetHashCode(),
+            Arguments.Aggregate(Template?.GetHashCode() ?? 0,
                 (a1, a2) => a1.GetHashCode() ^ a2.GetHashCode()) ^
                 Desugared.GetHashCode();
     }

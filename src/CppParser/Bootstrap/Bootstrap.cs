@@ -160,6 +160,10 @@ namespace CppSharp
             WriteFile(managedCodeGen, Path.Combine("Parser", "ASTConverter.Expr.cs"));
         }
 
+        public void GenerateCode(Driver driver, List<GeneratorOutput> output)
+        {
+        }
+
         private void GenerateStmt(BindingContext ctx)
         {
             var stmtUnit = ctx.ASTContext.TranslationUnits.Find(unit =>
@@ -803,7 +807,7 @@ namespace CppSharp
 
                 UnindentAndWriteCloseBrace();
             }
-            
+
             WriteLine($"default:");
             WriteLineIndent($"throw new System.NotImplementedException(" +
                 $"{ParamName}.StmtClass.ToString());");
