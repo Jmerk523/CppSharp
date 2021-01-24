@@ -390,7 +390,7 @@ std::string Parser::GetDeclMangledName(const clang::Decl* D)
 
     auto ND = cast<NamedDecl>(D);
     std::unique_ptr<MangleContext> MC;
-    
+
     auto& AST = c->getASTContext();
     auto targetABI = c->getTarget().getCXXABI().getKind();
     switch(targetABI)
@@ -1076,7 +1076,7 @@ void Parser::WalkRecordCXX(const clang::CXXRecordDecl* Record, Class* RC)
     Sema.ForceDeclarationOfImplicitMembers(const_cast<clang::CXXRecordDecl*>(Record));
 
     WalkRecord(Record, RC);
-    
+
     if (!Record->hasDefinition())
         return;
 
@@ -1446,7 +1446,7 @@ Parser::WalkTemplateArgumentList(const clang::TemplateArgumentList* TAL,
 //-----------------------------------//
 
 std::vector<CppSharp::CppParser::TemplateArgument>
-Parser::WalkTemplateArgumentList(const clang::TemplateArgumentList* TAL, 
+Parser::WalkTemplateArgumentList(const clang::TemplateArgumentList* TAL,
     const clang::ASTTemplateArgumentListInfo* TALI)
 {
     using namespace clang;
@@ -1489,6 +1489,11 @@ Parser::WalkTemplateArgument(const clang::TemplateArgument& TA,
         if (ArgLoc && ArgLoc->getTypeSourceInfo())
         {
             ArgTL = ArgLoc->getTypeSourceInfo()->getTypeLoc();
+            if (ArgTL.getTypeLocClass() == clang::TypeLoc::TemplateTypeParm)
+            {
+                clang::TemplateTypeParmTypeLoc ParamTL = ArgTL.getAs<clang::TemplateTypeParmTypeLoc>();
+                //ArgTL = ParamTL.getNextTypeLoc();
+            }
         }
         auto Type = TA.getAsType();
         CompleteIfSpecializationType(Type);
@@ -1889,7 +1894,7 @@ Field* Parser::WalkFieldCXX(const clang::FieldDecl* FD, Class* Class)
     F->isBitField = FD->isBitField();
     if (F->isBitField && !F->isDependent && !FD->getBitWidth()->isInstantiationDependent())
         F->bitWidth = FD->getBitWidthValue(c->getASTContext());
- 
+
     if (auto alignedAttr = FD->getAttr<clang::AlignedAttr>())
         F->alignAs = GetAlignAs(alignedAttr);
 
@@ -2024,7 +2029,7 @@ DeclarationContext* Parser::GetNamespace(const clang::Decl* D,
 
 DeclarationContext* Parser::GetNamespace(const clang::Decl *D)
 {
-    return GetNamespace(D, D->getDeclContext());
+    return GetNamespace(D, opts->unityBuild ? D->getLexicalDeclContext() : D->getDeclContext());
 }
 
 static PrimitiveType WalkBuiltinType(const clang::BuiltinType* Builtin)
@@ -2038,7 +2043,7 @@ static PrimitiveType WalkBuiltinType(const clang::BuiltinType* Builtin)
 
     case clang::BuiltinType::SChar: return PrimitiveType::SChar;
     case clang::BuiltinType::Char_S: return PrimitiveType::Char;
-    
+
     case clang::BuiltinType::UChar:
     case clang::BuiltinType::Char_U: return PrimitiveType::UChar;
 
@@ -2056,7 +2061,7 @@ static PrimitiveType WalkBuiltinType(const clang::BuiltinType* Builtin)
 
     case clang::BuiltinType::Long: return PrimitiveType::Long;
     case clang::BuiltinType::ULong: return PrimitiveType::ULong;
-    
+
     case clang::BuiltinType::LongLong: return PrimitiveType::LongLong;
     case clang::BuiltinType::ULongLong: return PrimitiveType::ULongLong;
 
@@ -2308,10 +2313,10 @@ Type* Parser::WalkType(clang::QualType QualType, const clang::TypeLoc* TL,
     {
         auto Builtin = Type->getAs<clang::BuiltinType>();
         assert(Builtin && "Expected a builtin type");
-    
+
         auto BT = new BuiltinType();
         BT->type = WalkBuiltinType(Builtin);
-        
+
         Ty = BT;
         break;
     }
@@ -2329,7 +2334,7 @@ Type* Parser::WalkType(clang::QualType QualType, const clang::TypeLoc* TL,
     case clang::Type::Pointer:
     {
         auto Pointer = Type->getAs<clang::PointerType>();
-        
+
         auto P = new PointerType();
         P->modifier = PointerType::TypeModifier::Pointer;
 
@@ -2571,7 +2576,7 @@ Type* Parser::WalkType(clang::QualType QualType, const clang::TypeLoc* TL,
 
         auto MPT = new MemberPointerType();
         MPT->pointee = GetQualifiedType(MP->getPointeeType(), &Next);
-        
+
         Ty = MPT;
         break;
     }
@@ -2579,7 +2584,7 @@ Type* Parser::WalkType(clang::QualType QualType, const clang::TypeLoc* TL,
     {
         auto TS = Type->getAs<clang::TemplateSpecializationType>();
         auto TST = new TemplateSpecializationType();
-        
+
         TemplateName Name = TS->getTemplateName();
         TST->_template = static_cast<Template*>(WalkDeclaration(
             Name.getAsTemplateDecl()));
@@ -2601,11 +2606,6 @@ Type* Parser::WalkType(clang::QualType QualType, const clang::TypeLoc* TL,
                 ETL = TL->getAs<ElaboratedTypeLoc>();
                 ITL = ETL.getNextTypeLoc();
                 TL = &ITL;
-            }
-            else if (TypeLocClass != TypeLoc::TemplateSpecialization)
-            {
-                auto RTL = ResolveTypeLoc(*TL, TypeLoc::TemplateSpecialization);
-                TL = &RTL;
             }
 
             assert(TL->getTypeLocClass() == TypeLoc::TemplateSpecialization);
@@ -2650,10 +2650,24 @@ Type* Parser::WalkType(clang::QualType QualType, const clang::TypeLoc* TL,
                 ITL = ETL.getNextTypeLoc();
                 TL = &ITL;
             }
-            else if (TypeLocClass != TypeLoc::DependentTemplateSpecialization)
+            else if (TypeLocClass == TypeLoc::TemplateSpecialization)
             {
-                auto RTL = ResolveTypeLoc(*TL, TypeLoc::DependentTemplateSpecialization);
-                TL = &RTL;
+                TemplateSpecializationTypeLoc TSpecTL2;
+                TemplateSpecializationTypeLoc* TSTL2 = 0;
+                if (LocValid)
+                {
+                    TSpecTL2 = TL->getAs<TemplateSpecializationTypeLoc>();
+                    TSTL2 = &TSpecTL2;
+                }
+
+                auto TST2 = new TemplateSpecializationType();
+
+                ArrayRef<clang::TemplateArgument> TSArgs2(TS->getArgs(), TS->getNumArgs());
+                TemplateArgumentList TArgs2(TemplateArgumentList::OnStack, TSArgs2);
+                TST2->Arguments = WalkTemplateArgumentList(&TArgs2, TSTL2);
+
+                Ty = TST2;
+                break;
             }
 
             assert(TL->getTypeLocClass() == TypeLoc::DependentTemplateSpecialization);
@@ -2876,7 +2890,7 @@ Type* Parser::WalkType(clang::QualType QualType, const clang::TypeLoc* TL,
         break;
     }
     default:
-    {   
+    {
         Debug("Unhandled type class '%s'\n", Type->getTypeClassName());
         return nullptr;
     } }
@@ -3743,8 +3757,8 @@ AST::ExpressionObsolete* Parser::WalkExpressionObsolete(const clang::Expr* Expr)
         if (Expr->getStmtClass() == clang::Stmt::CharacterLiteralClass)
         {
             auto result = GetStringFromStatement(Expr);
-            if (!result.empty() && 
-                result.front() != '\'' && 
+            if (!result.empty() &&
+                result.front() != '\'' &&
                 Expr->EvaluateAsInt(integer, c->getASTContext()))
             {
                 result = integer.Val.getInt().toString(10);
@@ -3784,11 +3798,11 @@ AST::ExpressionObsolete* Parser::WalkVariableInitializerExpression(const clang::
         if (printer.Print(result.Val, Expr->getType()))
             return new AST::ExpressionObsolete(out.str());
     }
-    
+
     return WalkExpressionObsolete(Expr);
 }
 
-bool Parser::IsCastStmt(clang::Stmt::StmtClass stmt) 
+bool Parser::IsCastStmt(clang::Stmt::StmtClass stmt)
 {
     switch (stmt)
     {
@@ -3805,7 +3819,7 @@ bool Parser::IsCastStmt(clang::Stmt::StmtClass stmt)
     }
 }
 
-bool Parser::IsLiteralStmt(clang::Stmt::StmtClass stmt) 
+bool Parser::IsLiteralStmt(clang::Stmt::StmtClass stmt)
 {
     switch (stmt)
     {
@@ -3871,7 +3885,7 @@ void Parser::HandlePreprocessedEntities(Declaration* Decl,
     {
         auto Entity = WalkPreprocessedEntity(Decl, PPEntity);
         if (!Entity) continue;
- 
+
         if (Entity->macroLocation == MacroLocation::Unknown)
             Entity->macroLocation = macroLocation;
     }
@@ -3886,7 +3900,7 @@ void Parser::HandleOriginalText(const clang::Decl* D, Declaration* Decl)
 
     bool Invalid;
     auto DeclText = clang::Lexer::getSourceText(Range, SM, LangOpts, &Invalid);
-    
+
     if (!Invalid)
         Decl->debugText = DeclText.str();
 }
@@ -3990,8 +4004,8 @@ Declaration* Parser::WalkDeclaration(const clang::Decl* D)
     case Decl::ClassTemplate:
     {
         auto TD = cast<ClassTemplateDecl>(D);
-        auto Template = WalkClassTemplate(TD); 
-        
+        auto Template = WalkClassTemplate(TD);
+
         Decl = Template;
         break;
     }
@@ -4079,13 +4093,13 @@ Declaration* Parser::WalkDeclaration(const clang::Decl* D)
     case Decl::LinkageSpec:
     {
         auto LS = cast<LinkageSpecDecl>(D);
-        
+
         for (auto it = LS->decls_begin(); it != LS->decls_end(); ++it)
         {
             clang::Decl* D = (*it);
             Decl = WalkDeclarationDef(D);
         }
-        
+
         break;
     }
     case Decl::Typedef:
@@ -4307,7 +4321,7 @@ void Parser::HandleDiagnostics(ParserResult* res)
 
         switch( Diag.Level )
         {
-        case clang::DiagnosticsEngine::Ignored: 
+        case clang::DiagnosticsEngine::Ignored:
             PDiag.level = ParserDiagnosticLevel::Ignored;
             break;
         case clang::DiagnosticsEngine::Note:
@@ -4708,11 +4722,16 @@ ParserResult* ClangParser::ParseHeader(CppParserOptions* Opts)
     {
         auto parser = new Parser(Opts);
         parsers.push_back(parser);
-        std::vector<std::string> Header(&Headers[i], &Headers[i + 1]);
         if (i < Headers.size() - 1)
+        {
+            std::vector<std::string> Header(&Headers[i], &Headers[i + 1]);
             delete parser->Parse(Header);
+        }
         else
+        {
+            std::vector<std::string> Header(--Headers.end(), Headers.end());
             res = parser->Parse(Header);
+        }
     }
 
     for (auto parser : parsers)

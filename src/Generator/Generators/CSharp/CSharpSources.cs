@@ -407,7 +407,7 @@ namespace CppSharp.Generators.CSharp
 
             if (@class.IsDependent && !@class.IsGenerated)
                 return true;
-            
+
             // disable the type maps, if any, for this class because of copy ctors, operators and others
             this.DisableTypeMap(@class);
 
@@ -497,7 +497,7 @@ namespace CppSharp.Generators.CSharp
             foreach (var method in @class.Methods.Where(m =>
                 (m.OriginalFunction == null ||
                  !ASTUtils.CheckIgnoreFunction(m.OriginalFunction)) &&
-                m.Access == AccessSpecifier.Public && 
+                m.Access == AccessSpecifier.Public &&
                 (!shouldInheritFromIDisposable || !IsDisposeMethod(m))))
             {
                 PushBlock(BlockKind.Method);
@@ -551,7 +551,7 @@ namespace CppSharp.Generators.CSharp
             PushBlock(BlockKind.InternalsClass);
 
             if (@class.Layout.Size > 0)
-            { 
+            {
                 var layout = sequentialLayout ? "Sequential" : "Explicit";
                 var pack = @class.MaxFieldAlignment > 0 ? $", Pack = {@class.MaxFieldAlignment}" : string.Empty;
                 WriteLine($"[StructLayout(LayoutKind.{layout}, Size = {@class.Layout.Size}{pack})]");
@@ -802,7 +802,7 @@ namespace CppSharp.Generators.CSharp
             var fields = @class.Layout.Fields;
 
             if (fields.Count > 1)
-            { 
+            {
                 for (var i = 1; i < fields.Count; ++i)
                 {
                     if (fields[i].Offset == fields[i - 1].Offset)
@@ -837,7 +837,7 @@ namespace CppSharp.Generators.CSharp
                 if (sequentialLayout && i > 0)
                 {
                     var padding = field.Offset - field.CalculateOffset(fields[i - 1], Context.TargetInfo);
-                        
+
                     if (padding > 1)
                         WriteLine($"internal fixed byte {field.Name}Padding[{padding}];");
                     else if (padding > 0)
@@ -1185,11 +1185,11 @@ namespace CppSharp.Generators.CSharp
                 var systemType = Internal.ExpressionHelper.GetSystemType(Context, arrayType.Type.Desugar());
                 Write($"new {arrayType.Type}[{arrayType.Size}] ");
                 Write("{ ");
-  
+
                 List<string> elements = Internal.ExpressionHelper.SplitInitListExpr(initializerString);
 
                 while (elements.Count < arrayType.Size)
-                    elements.Add(systemType == typeof(string) ? "\"\"" : null);                
+                    elements.Add(systemType == typeof(string) ? "\"\"" : null);
 
                 for (int i = 0; i < elements.Count; ++i)
                 {
@@ -1197,7 +1197,7 @@ namespace CppSharp.Generators.CSharp
 
                     if (e == null)
                         Write("default");
-                    else { 
+                    else {
                         if (!Internal.ExpressionHelper.TryParseExactLiteralExpression(ref e, systemType))
                             Write($"({arrayType.Type})");
                         Write(e);
@@ -1759,14 +1759,14 @@ namespace CppSharp.Generators.CSharp
 
             WriteLines($@"
             internal {(hasDynamicBase ? "override" : "virtual")} CppSharp.Runtime.VTables __VTables
-            {{ 
+            {{
                 get {{
                     if (__vtables.IsEmpty)
                         __vtables.Tables = {($"new IntPtr[] {{ {string.Join(", ", originalTableClass.Layout.VTablePointers.Select(x => $"*(IntPtr*)({Helpers.InstanceIdentifier} + {x.Offset})"))} }}")};
                     return __vtables;
                 }}
 
-                set {{        
+                set {{
                     __vtables = value;
                 }}
             }}
@@ -1801,7 +1801,7 @@ namespace CppSharp.Generators.CSharp
 
         private void AllocateNewVTablesMS(Class @class, IList<VTableComponent> wrappedEntries,
             bool destructorOnly, string table)
-        {        
+        {
             for (int i = 0; i < @class.Layout.VFTables.Count; i++)
             {
                 VFTableInfo vftable = @class.Layout.VFTables[i];
@@ -1828,9 +1828,9 @@ namespace CppSharp.Generators.CSharp
         {
             string suffix = (destructorOnly ? "_dtor" : string.Empty) +
                 (tableIndex == 0 ? string.Empty : tableIndex.ToString(CultureInfo.InvariantCulture));
-     
+
             WriteLine($"{table}[{tableIndex}] = CppSharp.Runtime.VTables.CloneTable(SafeHandles, instance, {vptrOffset}, {entries.Count});");
-      
+
             // fill the newly allocated v-table
             for (var i = 0; i < entries.Count; i++)
             {
@@ -1844,7 +1844,7 @@ namespace CppSharp.Generators.CSharp
                     // patch with pointers to managed code where needed
                     WriteLine("{0}[{1}][{2}] = Thunks[{3}];", table, tableIndex, i - offsetRTTI, wrappedEntries.IndexOf(entry));
             }
-       
+
             if (!destructorOnly)
                 WriteLine($"VTables.Methods[{tableIndex}] = new Delegate[{entries.Count}];");
         }
@@ -2399,7 +2399,7 @@ internal static{(@new ? " new" : string.Empty)} {printedClass} __GetInstance({Ty
         public void GenerateNativeConstructorByValue(Class @class, TypePrinterResult returnType)
         {
             var @internal = TypePrinter.PrintNative(@class.IsAbstractImpl ? @class.BaseClass : @class);
-            
+
             if (IsInternalClassNested(@class))
                 @internal.RemoveNamespace();
 
@@ -3383,7 +3383,7 @@ internal static{(@new ? " new" : string.Empty)} {printedClass} __GetInstance({Ty
             PushBlock(BlockKind.InternalsClassMethod);
             var callConv = function.CallingConvention.ToInteropCallConv();
 
-            WriteLine("[SuppressUnmanagedCodeSecurity, DllImport(\"{0}\", EntryPoint = \"{1}\", CallingConvention = __CallingConvention.{2})]", 
+            WriteLine("[SuppressUnmanagedCodeSecurity, DllImport(\"{0}\", EntryPoint = \"{1}\", CallingConvention = __CallingConvention.{2})]",
                 GetLibraryOf(function),
                 function.Mangled,
                 callConv);
@@ -3472,7 +3472,7 @@ internal static{(@new ? " new" : string.Empty)} {printedClass} __GetInstance({Ty
 
             public LibrarySymbolInfo(string path, string @namespace)
             {
-                this.path = path;                
+                this.path = path;
                 this.@namespace = @namespace;
                 @class = identifierCleanerRegex.Replace(path, "_");
             }

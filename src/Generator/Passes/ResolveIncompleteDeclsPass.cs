@@ -76,10 +76,10 @@ namespace CppSharp.Passes
                 return false;
 
             if (!@enum.IsIncomplete)
-                goto Out;
+                return base.VisitEnumDecl(@enum);
 
             if (@enum.CompleteDeclaration != null)
-                goto Out;
+                return base.VisitEnumDecl(@enum);
 
             @enum.CompleteDeclaration =
                 ASTContext.FindCompleteEnum(@enum.QualifiedName);
@@ -89,8 +89,6 @@ namespace CppSharp.Passes
                 @enum.GenerationKind = GenerationKind.Internal;
                 Diagnostics.Warning("Unresolved declaration: {0}", @enum.Name);
             }
-
-        Out:
 
             return base.VisitEnumDecl(@enum);
         }

@@ -184,6 +184,7 @@ namespace CppSharp.Generators.CLI
                 case PrimitiveType.Bool:
                 case PrimitiveType.Char:
                 case PrimitiveType.Char16:
+                case PrimitiveType.Char32:
                 case PrimitiveType.WideChar:
                 case PrimitiveType.SChar:
                 case PrimitiveType.UChar:

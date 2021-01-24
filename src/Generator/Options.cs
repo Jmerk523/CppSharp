@@ -119,6 +119,12 @@ namespace CppSharp
         /// </summary>
         public bool GenerateFinalizers;
 
+        /// <summary>
+        /// Enable this option to enable generation of SafeHandles.
+        /// Works in both CLI and C# backends.
+        /// </summary>
+        public bool GenerateSafeHandles;
+
         public string IncludePrefix;
         public Func<TranslationUnit, string> GenerateName;
 

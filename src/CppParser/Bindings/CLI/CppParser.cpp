@@ -181,10 +181,10 @@ void CppSharp::Parser::CppParserOptions::ClearSupportedStdTypes()
 
 CppSharp::Parser::CppParserOptions::CppParserOptions(CppSharp::Parser::CppParserOptions^ _0)
 {
-    __ownsNativeInstance = true;
     if (ReferenceEquals(_0, nullptr))
         throw gcnew ::System::ArgumentNullException("_0", "Cannot be null because it is a C++ reference (&).");
     auto &__arg0 = *(::CppSharp::CppParser::CppParserOptions*)_0->NativePtr;
+    __ownsNativeInstance = true;
     NativePtr = new ::CppSharp::CppParser::CppParserOptions(__arg0);
 }
 
@@ -534,7 +534,8 @@ CppSharp::Parser::LinkerOptions^ CppSharp::Parser::LinkerOptions::__CreateInstan
 
 CppSharp::Parser::LinkerOptions::~LinkerOptions()
 {
-    delete NativePtr;
+    if (__ownsNativeInstance)
+        delete NativePtr;
 }
 
 CppSharp::Parser::LinkerOptions::LinkerOptions()
@@ -727,7 +728,8 @@ CppSharp::Parser::ParserDiagnostic^ CppSharp::Parser::ParserDiagnostic::__Create
 
 CppSharp::Parser::ParserDiagnostic::~ParserDiagnostic()
 {
-    delete NativePtr;
+    if (__ownsNativeInstance)
+        delete NativePtr;
 }
 
 CppSharp::Parser::ParserDiagnostic::ParserDiagnostic()
@@ -829,7 +831,8 @@ CppSharp::Parser::ParserResult^ CppSharp::Parser::ParserResult::__CreateInstance
 
 CppSharp::Parser::ParserResult::~ParserResult()
 {
-    delete NativePtr;
+    if (__ownsNativeInstance)
+        delete NativePtr;
 }
 
 CppSharp::Parser::ParserResult::ParserResult()
@@ -1000,7 +1003,8 @@ CppSharp::Parser::ClangParser^ CppSharp::Parser::ClangParser::__CreateInstance(:
 
 CppSharp::Parser::ClangParser::~ClangParser()
 {
-    delete NativePtr;
+    if (__ownsNativeInstance)
+        delete NativePtr;
 }
 
 CppSharp::Parser::ParserResult^ CppSharp::Parser::ClangParser::ParseHeader(CppSharp::Parser::CppParserOptions^ Opts)

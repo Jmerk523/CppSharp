@@ -720,7 +720,7 @@ namespace CppSharp.AST
             if (type == null) return false;
 
             return Arguments.SequenceEqual(type.Arguments) &&
-                ((Template != null && Template.Name == type.Template?.Name) ||
+                ((Template != null && Template?.Name == type.Template?.Name) ||
                 (Desugared.Type != null && Desugared == type.Desugared));
         }
 

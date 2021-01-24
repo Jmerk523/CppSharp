@@ -383,9 +383,9 @@ namespace CppSharp
 
         public void Dispose()
         {
-            Generator.Dispose();
+            Generator?.Dispose();
             Context.TargetInfo?.Dispose();
-            ParserOptions.Dispose();
+            ParserOptions?.Dispose();
         }
 
         private bool hasParsingErrors;

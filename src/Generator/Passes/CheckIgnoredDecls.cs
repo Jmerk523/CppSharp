@@ -52,9 +52,10 @@ namespace CppSharp.Passes
                 return false;
 
             TypeMap typeMap;
-            if (!Options.GenerateClassTemplates && !specialization.IsExplicitlyGenerated &&
+            if (!Options.GenerateClassTemplates && !specialization.HasExplicitGenerationKind &&
                 !Context.TypeMaps.FindTypeMap(specialization, out typeMap))
             {
+                Diagnostics.Debug("Decl '{0}' was ignored due to disabled class template generation", specialization.Name);
                 specialization.ExplicitlyIgnore();
                 return false;
             }
@@ -64,6 +65,7 @@ namespace CppSharp.Passes
                 a.Type.Type?.TryGetDeclaration(out decl) == true) &&
                 decl.Ignore)
             {
+                Diagnostics.Debug("Decl '{0}' was ignored due to ignored argument {1}", specialization.Name, decl.Name);
                 specialization.ExplicitlyIgnore();
                 return false;
             }
@@ -84,6 +86,7 @@ namespace CppSharp.Passes
 
             if (decl.IsInvalid)
             {
+                Diagnostics.Debug("Decl '{0}' was ignored due to being invalid", decl.Name);
                 decl.ExplicitlyIgnore();
                 return true;
             }
@@ -140,7 +143,7 @@ namespace CppSharp.Passes
              if (!base.VisitFunctionTemplateDecl(decl))
                  return false;
 
-            if (decl.TemplatedFunction.IsDependent && !decl.IsExplicitlyGenerated)
+            if (decl.TemplatedFunction.IsDependent && !decl.HasExplicitGenerationKind)
             {
                 decl.TemplatedFunction.GenerationKind = GenerationKind.None;
                 Diagnostics.Debug("Decl '{0}' was ignored due to dependent context",
@@ -154,7 +157,7 @@ namespace CppSharp.Passes
         public override bool VisitFunctionDecl(Function function)
         {
             if (!VisitDeclaration(function) || function.IsSynthetized
-                || function.IsExplicitlyGenerated)
+                || function.HasExplicitGenerationKind)
                 return false;
 
             if (function.IsDependent && !(function.Namespace is Class))
@@ -498,7 +501,7 @@ namespace CppSharp.Passes
             }
 
             var @class = decl as Class;
-            if (@class != null && @class.IsOpaque && !@class.IsDependent && 
+            if (@class != null && @class.IsOpaque && !@class.IsDependent &&
                 !(@class is ClassTemplateSpecialization))
             {
                 msg = null;
@@ -579,7 +582,10 @@ namespace CppSharp.Passes
         {
             if (@class.TemplateParameters.Any(param => param is NonTypeTemplateParameter))
                 foreach (var specialization in @class.Specializations)
+                {
+                    Diagnostics.Debug("Decl '{0}' was ignored due to non-type template parameter", specialization.Name);
                     specialization.ExplicitlyIgnore();
+                }
 
             if (!Options.IsCLIGenerator && !@class.TranslationUnit.IsSystemHeader &&
                 @class.Specializations.Count > 0)
@@ -587,13 +593,19 @@ namespace CppSharp.Passes
 
             bool hasExplicitlyGeneratedSpecializations = false;
             foreach (var specialization in @class.Specializations)
-                if (specialization.IsExplicitlyGenerated)
+                if (specialization.HasExplicitGenerationKind || Options.GenerateClassTemplates)
                     hasExplicitlyGeneratedSpecializations = true;
                 else
+                {
+                    Diagnostics.Debug("Decl '{0}' was ignored due to not being explicitly generated", specialization.Name);
                     specialization.ExplicitlyIgnore();
+                }
 
             if (!hasExplicitlyGeneratedSpecializations)
+            {
+                Diagnostics.Debug("Decl '{0}' was ignored due to missing explicitly generated specializations", @class.Name);
                 @class.ExplicitlyIgnore();
+            }
         }
 
         #endregion

@@ -4,6 +4,22 @@ using CppSharp.Generators.C;
 
 namespace CppSharp.Generators.CLI
 {
+    public enum NativeHandleManagement
+    {
+        /// <summary>
+        /// Native handle nonexistent or ignored
+        /// </summary>
+        None,
+        /// <summary>
+        /// Native handle managed by SafeHandle base class
+        /// </summary>
+        SafeHandle,
+        /// <summary>
+        /// Native handle managed directly by generated code
+        /// </summary>
+        NativePointer,
+    }
+
     /// <summary>
     /// C++/CLI generator responsible for driving the generation of
     /// source and header files.
@@ -32,12 +48,30 @@ namespace CppSharp.Generators.CLI
 
         public override bool SetupPasses() => true;
 
+        public static NativeHandleManagement ClassNativeFieldManagement(Class @class, DriverOptions options = null)
+        {
+            if (!@class.IsStatic && @class.IsRefType)
+            {
+                if (options?.GenerateSafeHandles != true)
+                {
+                    return NativeHandleManagement.NativePointer;
+                }
+                else if (!@class.NeedsBase)
+                {
+                    return NativeHandleManagement.SafeHandle;
+                }
+                else if (!@class.HasRefBase())
+                {
+                    return NativeHandleManagement.NativePointer;
+                }
+                return NativeHandleManagement.SafeHandle;
+            }
+            return NativeHandleManagement.None;
+        }
+
         public static bool ShouldGenerateClassNativeField(Class @class)
         {
-            if (@class.IsStatic)
-                return false;
-
-            return @class.IsRefType && (!@class.NeedsBase || !@class.HasRefBase());
+            return ClassNativeFieldManagement(@class) != NativeHandleManagement.None;
         }
 
         protected override string TypePrinterDelegate(Type type)

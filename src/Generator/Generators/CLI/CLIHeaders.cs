@@ -264,7 +264,7 @@ namespace CppSharp.Generators.CLI
 
             var nativeType = string.Format("::{0}*", @class.QualifiedOriginalName);
 
-            if (CLIGenerator.ShouldGenerateClassNativeField(@class))
+            if (CLIGenerator.ClassNativeFieldManagement(@class) == NativeHandleManagement.NativePointer)
                 GenerateClassNativeField(@class, nativeType);
 
             GenerateClassConstructors(@class, nativeType);
@@ -279,15 +279,26 @@ namespace CppSharp.Generators.CLI
 
             GenerateClassVariables(@class);
 
-            if (CLIGenerator.ShouldGenerateClassNativeField(@class))
+            switch (CLIGenerator.ClassNativeFieldManagement(@class))
             {
-                PushBlock(BlockKind.AccessSpecifier);
-                WriteLine("protected:");
-                PopBlock(NewLineKind.IfNotEmpty);
+                case NativeHandleManagement.NativePointer:
+                    PushBlock(BlockKind.AccessSpecifier);
+                    WriteLine("protected:");
+                    PopBlock(NewLineKind.IfNotEmpty);
 
-                PushBlock(BlockKind.Fields);
-                WriteLineIndent("bool {0};", Helpers.OwnsNativeInstanceIdentifier);
-                PopBlock();
+                    PushBlock(BlockKind.Fields);
+                    WriteLineIndent("bool {0};", Helpers.OwnsNativeInstanceIdentifier);
+                    PopBlock();
+                    break;
+                case NativeHandleManagement.SafeHandle:
+                    PushBlock(BlockKind.AccessSpecifier);
+                    WriteLine("public:");
+                    PopBlock(NewLineKind.IfNotEmpty);
+
+                    PushBlock(BlockKind.Property);
+                    WriteLine("property bool IsInvalid override;");
+                    PopBlock();
+                    break;
             }
 
             PushBlock(BlockKind.AccessSpecifier);
@@ -595,6 +606,8 @@ namespace CppSharp.Generators.CLI
             {
                 if (@class.HasRefBase())
                     Write(" : {0}", QualifiedIdentifier(@class.Bases[0].Class));
+                else if (CLIGenerator.ClassNativeFieldManagement(@class) == NativeHandleManagement.SafeHandle)
+                    Write(" : System.Runtime.InteropServices.SafeHandle, ICppInstance");
                 else if (@class.IsRefType)
                     Write(" : ICppInstance");
             }
@@ -760,7 +773,7 @@ namespace CppSharp.Generators.CLI
                     : ((FunctionType)attributedType).CallingConvention;
                 var interopCallConv = callingConvention.ToInteropCallConv();
                 if (interopCallConv != System.Runtime.InteropServices.CallingConvention.Winapi)
-                    WriteLine("[System::Runtime::InteropServices::UnmanagedFunctionPointer" + 
+                    WriteLine("[System::Runtime::InteropServices::UnmanagedFunctionPointer" +
                         "(System::Runtime::InteropServices::CallingConvention::{0})] ",
                         interopCallConv);
 

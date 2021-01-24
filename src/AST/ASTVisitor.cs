@@ -234,7 +234,12 @@ namespace CppSharp.AST
             {
                 var @class = template.Template.TemplatedDecl as Class;
                 if (@class != null)
-                    return @class.Specializations.Any(s => s.Visit(this));
+                {
+                    foreach (var s in @class.Specializations)
+                        if (s.Visit(this))
+                            return true;
+                    return false;
+                }
                 return template.Template.Visit(this);
             }
 
@@ -438,7 +443,7 @@ namespace CppSharp.AST
             {
                 if (property.GetMethod != null)
                     property.GetMethod.Visit(this);
-        
+
                 if (property.SetMethod != null)
                     property.SetMethod.Visit(this);
             }
@@ -478,8 +483,8 @@ namespace CppSharp.AST
         public virtual bool VisitParameterDecl(Parameter parameter)
         {
             if (!VisitDeclaration(parameter))
-                return false; 
-            
+                return false;
+
             return parameter.Type.Visit(this, parameter.QualifiedType.Qualifiers);
         }
 
@@ -518,7 +523,7 @@ namespace CppSharp.AST
                 return false;
 
             // TODO: Remove this null check once CppParser can properly handle auto types.
-            // This is workaround for https://github.com/mono/CppSharp/issues/1412.            
+            // This is workaround for https://github.com/mono/CppSharp/issues/1412.
             if (variable.Type == null)
                 return false;
 
@@ -600,7 +605,7 @@ namespace CppSharp.AST
 
             template.TemplatedVariable.Visit(this);
 
-            return true; 
+            return true;
         }
 
         public virtual bool VisitVarTemplateSpecializationDecl(VarTemplateSpecialization specialization)
